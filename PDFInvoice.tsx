@@ -1,50 +1,112 @@
-
 import React from 'react';
-import { GridData } from '../types';
+import { OrderInfo, GridData } from '../types';
 
-interface LensGridProps {
+interface PDFInvoiceProps {
+  info: OrderInfo;
+  gridData: GridData;
   spheres: string[];
   cylinders: string[];
-  data: GridData;
-  onCellClick: (sphere: string, cylinder: string) => void;
 }
 
-const LensGrid: React.FC<LensGridProps> = ({ spheres, cylinders, data, onCellClick }) => {
-  return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <table className="w-full border-collapse text-xs">
+const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylinders }) => {
+  // Filter spheres based on absolute value for pagination
+  // Page 1: 0.00 to 10.00 (inclusive)
+  const page1Spheres = spheres.filter(s => Math.abs(parseFloat(s)) <= 10.00);
+  // Page 2: > 10.00
+  const page2Spheres = spheres.filter(s => Math.abs(parseFloat(s)) > 10.00);
+
+  // Dynamic styling based on data density
+  // If we have few columns, we scale up the table for better legibility ("Make it bigger")
+  const colCount = cylinders.length;
+  const isLowDensity = colCount <= 8;
+  const isMediumDensity = colCount > 8 && colCount <= 14;
+
+  const styles = {
+    fontSize: isLowDensity ? '12px' : isMediumDensity ? '10px' : '9px',
+    rowHeight: isLowDensity ? '30px' : isMediumDensity ? '24px' : '20px',
+    // Using 0 padding for height-constrained rows to rely on vertical-align: middle
+    cellPadding: isLowDensity ? '0 4px' : '0 1px', 
+  };
+
+  const InvoiceHeader = () => (
+    <div className="mb-4 border-b-2 border-black pb-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+      <div className="text-center">
+        <h1 className="text-3xl font-bold uppercase m-0 leading-tight tracking-wider">Sales Invoice</h1>
+      </div>
+      <div className="mt-6 flex justify-between text-[12px] leading-snug">
+        <div className="w-[60%]">
+          <p className="m-0"><strong>Client Name:</strong> {info.clientName || '__________________________'}</p>
+          <p className="m-0"><strong>Address:</strong> {info.clientAddress || '__________________________'}</p>
+        </div>
+        <div className="w-[40%] text-right">
+          <p className="m-0"><strong>Order ID:</strong> {info.orderId}</p>
+          <p className="m-0"><strong>Date:</strong> {info.date}</p>
+          <p className="m-0"><strong>Lens Type:</strong> <span className="underline font-bold">{info.lensType || '________________'}</span></p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const TablePage = ({ pageSpheres }: { pageSpheres: string[] }) => (
+    <div 
+      className="invoice-page bg-white p-[15mm] box-border relative" 
+      style={{ 
+        width: '210mm',
+        height: '297mm',
+        fontFamily: 'Times New Roman, serif',
+        backgroundColor: '#ffffff'
+      }}
+    >
+      <InvoiceHeader />
+      <table 
+        className="w-full border-collapse border border-black" 
+        style={{ 
+          tableLayout: 'fixed',
+          fontSize: styles.fontSize
+        }}
+      >
         <thead>
-          <tr className="bg-slate-100">
-            <th className="sticky left-0 z-10 bg-slate-100 border border-slate-200 p-2 text-slate-600 min-w-[80px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+          <tr style={{ height: styles.rowHeight }} className="bg-gray-50">
+            <th 
+              className="border border-black p-0 font-bold" 
+              style={{ width: '60px', verticalAlign: 'middle', textAlign: 'center' }}
+            >
               SPH \ CYL
             </th>
             {cylinders.map(cyl => (
-              <th key={cyl} className="border border-slate-200 p-2 text-slate-600 min-w-[60px]">{cyl}</th>
+              <th 
+                key={cyl} 
+                className="border border-black p-0 font-bold"
+                style={{ verticalAlign: 'middle', textAlign: 'center' }}
+              >
+                {cyl}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {spheres.map(sph => (
-            <tr key={sph} className="hover:bg-slate-50 transition-colors">
-              <td className="sticky left-0 z-10 bg-white border border-slate-200 p-2 font-bold text-slate-700 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+          {pageSpheres.map(sph => (
+            <tr key={sph} style={{ height: styles.rowHeight }}>
+              <td 
+                className="border border-black p-0 font-bold bg-gray-50"
+                style={{ verticalAlign: 'middle', textAlign: 'center' }}
+              >
                 {sph}
               </td>
               {cylinders.map(cyl => {
                 const key = `${sph}|${cyl}`;
-                const quantity = data[key];
-                const hasQuantity = quantity && quantity > 0;
-                
+                const val = gridData[key];
                 return (
-                  <td
-                    key={cyl}
-                    onClick={() => onCellClick(sph, cyl)}
-                    className={`border border-slate-200 p-2 text-center cursor-pointer select-none transition-all duration-200 active:opacity-70 ${
-                      hasQuantity 
-                        ? 'bg-emerald-500 text-white font-extrabold scale-[0.98] shadow-inner' 
-                        : 'text-slate-400 hover:bg-slate-100'
-                    }`}
+                  <td 
+                    key={cyl} 
+                    className="border border-black font-medium" 
+                    style={{ 
+                      padding: styles.cellPadding, 
+                      verticalAlign: 'middle', 
+                      textAlign: 'center' 
+                    }}
                   >
-                    {hasQuantity ? quantity : '—'}
+                    {val || ''}
                   </td>
                 );
               })}
@@ -52,8 +114,26 @@ const LensGrid: React.FC<LensGridProps> = ({ spheres, cylinders, data, onCellCli
           ))}
         </tbody>
       </table>
+      
+      <div className="absolute bottom-[20mm] left-[15mm] right-[15mm] flex justify-between text-[11px]">
+        <div className="text-center w-40">
+          <p className="mb-12">Authorized Signature</p>
+          <div className="border-t border-black pt-1 font-bold">Company Stamp</div>
+        </div>
+        <div className="text-center w-40">
+          <p className="mb-12">Customer Acknowledgment</p>
+          <div className="border-t border-black pt-1 font-bold">Date & Signature</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="pdf-wrapper" style={{ backgroundColor: '#ffffff' }}>
+      <TablePage pageSpheres={page1Spheres} />
+      {page2Spheres.length > 0 && <TablePage pageSpheres={page2Spheres} />}
     </div>
   );
 };
 
-export default LensGrid;
+export default PDFInvoice;
