@@ -1,5 +1,22 @@
+
 {
-  "name": "Copy of LensOrder Pro PWA",
-  "description": "A professional PWA for optical lens ordering with offline support and high-precision A4 PDF invoice generation.",
-  "requestFramePermissions": []
+  "name": "LensOrder Pro",
+  "short_name": "LensOrder",
+  "description": "Optical lens ordering and invoicing system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "https://picsum.photos/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
