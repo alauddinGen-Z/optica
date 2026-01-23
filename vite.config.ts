@@ -1,10 +1,10 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-export interface OrderInfo {
-  orderId: string;
-  date: string;
-  lensType: string;
-  clientName: string;
-  clientAddress: string;
-}
-
-export type GridData = Record<string, number>; // Key format: "sphere|cylinder"
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  }
+});

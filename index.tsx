@@ -1,72 +1,16 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LensOrder Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
-    <link rel="icon" href="https://picsum.photos/32/32">
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-      body {
-        font-family: 'Inter', sans-serif;
-        overscroll-behavior-y: contain;
-      }
-      
-      /* 
-         The hidden container for the React Component.
-         We hide it completely from the user.
-         The JS will clone nodes from here to the visible body for capturing.
-      */
-      #hidden-pdf-mount {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 0;
-        height: 0;
-        overflow: hidden;
-        visibility: hidden;
-        z-index: -100;
-      }
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 
-      .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-      }
-      .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
 }
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-<body class="bg-slate-50 text-slate-900">
-    <div id="root"></div>
-    <script type="module" src="index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(reg => {
-            console.log('SW registered:', reg);
-          }).catch(err => {
-            console.log('SW registration failed:', err);
-          });
-        });
-      }
-    </script>
-<script type="module" src="/index.tsx"></script>
-</body>
-</html>
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

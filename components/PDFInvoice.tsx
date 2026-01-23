@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderInfo, GridData } from '../types';
 
@@ -25,7 +24,7 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   const styles = {
     fontSize: isLowDensity ? '12px' : isMediumDensity ? '10px' : '9px',
     rowHeight: isLowDensity ? '26px' : isMediumDensity ? '20px' : '18px',
-    cellPadding: isLowDensity ? '4px 2px' : '1px 0',
+    cellPadding: isLowDensity ? '8px 4px' : isMediumDensity ? '4px 2px' : '1px 0',
   };
 
   const InvoiceHeader = () => (
