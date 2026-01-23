@@ -16,6 +16,18 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   // Page 2: > 10.00
   const page2Spheres = spheres.filter(s => Math.abs(parseFloat(s)) > 10.00);
 
+  // Dynamic styling based on data density
+  // If we have few columns, we scale up the table for better legibility ("Make it bigger")
+  const colCount = cylinders.length;
+  const isLowDensity = colCount <= 8;
+  const isMediumDensity = colCount > 8 && colCount <= 14;
+
+  const styles = {
+    fontSize: isLowDensity ? '12px' : isMediumDensity ? '10px' : '9px',
+    rowHeight: isLowDensity ? '26px' : isMediumDensity ? '20px' : '18px',
+    cellPadding: isLowDensity ? '4px 2px' : '1px 0',
+  };
+
   const InvoiceHeader = () => (
     <div className="mb-4 border-b-2 border-black pb-2" style={{ fontFamily: 'Times New Roman, serif' }}>
       <div className="text-center">
@@ -46,9 +58,15 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
       }}
     >
       <InvoiceHeader />
-      <table className="w-full border-collapse border border-black text-[11px]" style={{ tableLayout: 'fixed' }}>
+      <table 
+        className="w-full border-collapse border border-black" 
+        style={{ 
+          tableLayout: 'fixed',
+          fontSize: styles.fontSize
+        }}
+      >
         <thead>
-          <tr style={{ height: '18px' }} className="bg-gray-50">
+          <tr style={{ height: styles.rowHeight }} className="bg-gray-50">
             <th className="border border-black p-0 text-center font-bold" style={{ width: '60px' }}>SPH \ CYL</th>
             {cylinders.map(cyl => (
               <th key={cyl} className="border border-black p-0 text-center font-bold">{cyl}</th>
@@ -57,13 +75,13 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
         </thead>
         <tbody>
           {pageSpheres.map(sph => (
-            <tr key={sph} style={{ height: '18px' }}>
+            <tr key={sph} style={{ height: styles.rowHeight }}>
               <td className="border border-black p-0 text-center font-bold bg-gray-50">{sph}</td>
               {cylinders.map(cyl => {
                 const key = `${sph}|${cyl}`;
                 const val = gridData[key];
                 return (
-                  <td key={cyl} className="border border-black p-0 text-center font-medium">
+                  <td key={cyl} className="border border-black text-center font-medium" style={{ padding: styles.cellPadding }}>
                     {val || ''}
                   </td>
                 );
