@@ -24,8 +24,6 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   const styles = {
     fontSize: isLowDensity ? '12px' : isMediumDensity ? '10px' : '9px',
     rowHeight: isLowDensity ? '30px' : isMediumDensity ? '24px' : '20px',
-    // Using 0 padding for height-constrained rows to rely on vertical-align: middle
-    cellPadding: isLowDensity ? '0 4px' : '0 1px', 
   };
 
   const InvoiceHeader = () => (
@@ -44,6 +42,22 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
           <p className="m-0"><strong>Lens Type:</strong> <span className="underline font-bold">{info.lensType || '________________'}</span></p>
         </div>
       </div>
+    </div>
+  );
+
+  const CellContent = ({ children, bold = false }: { children?: React.ReactNode, bold?: boolean }) => (
+    <div 
+      style={{ 
+        display: 'flex', 
+        width: '100%', 
+        height: '100%', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        fontWeight: bold ? 'bold' : 'normal',
+        textAlign: 'center'
+      }}
+    >
+      {children}
     </div>
   );
 
@@ -68,18 +82,14 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
         <thead>
           <tr style={{ height: styles.rowHeight }} className="bg-gray-50">
             <th 
-              className="border border-black p-0 font-bold" 
-              style={{ width: '60px', verticalAlign: 'middle', textAlign: 'center' }}
+              className="border border-black p-0" 
+              style={{ width: '60px' }}
             >
-              SPH \ CYL
+              <CellContent bold>SPH \ CYL</CellContent>
             </th>
             {cylinders.map(cyl => (
-              <th 
-                key={cyl} 
-                className="border border-black p-0 font-bold"
-                style={{ verticalAlign: 'middle', textAlign: 'center' }}
-              >
-                {cyl}
+              <th key={cyl} className="border border-black p-0">
+                <CellContent bold>{cyl}</CellContent>
               </th>
             ))}
           </tr>
@@ -87,26 +97,15 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
         <tbody>
           {pageSpheres.map(sph => (
             <tr key={sph} style={{ height: styles.rowHeight }}>
-              <td 
-                className="border border-black p-0 font-bold bg-gray-50"
-                style={{ verticalAlign: 'middle', textAlign: 'center' }}
-              >
-                {sph}
+              <td className="border border-black p-0 bg-gray-50">
+                <CellContent bold>{sph}</CellContent>
               </td>
               {cylinders.map(cyl => {
                 const key = `${sph}|${cyl}`;
                 const val = gridData[key];
                 return (
-                  <td 
-                    key={cyl} 
-                    className="border border-black font-medium" 
-                    style={{ 
-                      padding: styles.cellPadding, 
-                      verticalAlign: 'middle', 
-                      textAlign: 'center' 
-                    }}
-                  >
-                    {val || ''}
+                  <td key={cyl} className="border border-black p-0">
+                    <CellContent>{val || ''}</CellContent>
                   </td>
                 );
               })}
