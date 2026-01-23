@@ -23,8 +23,7 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
 
   const styles = {
     fontSize: isLowDensity ? '12px' : isMediumDensity ? '10px' : '9px',
-    rowHeight: isLowDensity ? '26px' : isMediumDensity ? '20px' : '18px',
-    cellPadding: isLowDensity ? '8px 4px' : isMediumDensity ? '4px 2px' : '1px 0',
+    rowHeight: isLowDensity ? '30px' : isMediumDensity ? '24px' : '20px',
   };
 
   const InvoiceHeader = () => (
@@ -43,6 +42,22 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
           <p className="m-0"><strong>Lens Type:</strong> <span className="underline font-bold">{info.lensType || '________________'}</span></p>
         </div>
       </div>
+    </div>
+  );
+
+  const CellContent = ({ children, bold = false }: { children?: React.ReactNode, bold?: boolean }) => (
+    <div 
+      style={{ 
+        display: 'flex', 
+        width: '100%', 
+        height: '100%', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        fontWeight: bold ? 'bold' : 'normal',
+        textAlign: 'center'
+      }}
+    >
+      {children}
     </div>
   );
 
@@ -66,22 +81,31 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
       >
         <thead>
           <tr style={{ height: styles.rowHeight }} className="bg-gray-50">
-            <th className="border border-black p-0 text-center font-bold" style={{ width: '60px' }}>SPH \ CYL</th>
+            <th 
+              className="border border-black p-0" 
+              style={{ width: '60px' }}
+            >
+              <CellContent bold>SPH \ CYL</CellContent>
+            </th>
             {cylinders.map(cyl => (
-              <th key={cyl} className="border border-black p-0 text-center font-bold">{cyl}</th>
+              <th key={cyl} className="border border-black p-0">
+                <CellContent bold>{cyl}</CellContent>
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {pageSpheres.map(sph => (
             <tr key={sph} style={{ height: styles.rowHeight }}>
-              <td className="border border-black p-0 text-center font-bold bg-gray-50">{sph}</td>
+              <td className="border border-black p-0 bg-gray-50">
+                <CellContent bold>{sph}</CellContent>
+              </td>
               {cylinders.map(cyl => {
                 const key = `${sph}|${cyl}`;
                 const val = gridData[key];
                 return (
-                  <td key={cyl} className="border border-black text-center font-medium" style={{ padding: styles.cellPadding }}>
-                    {val || ''}
+                  <td key={cyl} className="border border-black p-0">
+                    <CellContent>{val || ''}</CellContent>
                   </td>
                 );
               })}
