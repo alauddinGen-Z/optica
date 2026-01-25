@@ -9,40 +9,100 @@ interface PDFInvoiceProps {
 }
 
 const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylinders }) => {
-  // Filter spheres based on absolute value for pagination
-  // Page 1: 0.00 to 10.00 (inclusive)
-  const page1Spheres = spheres.filter(s => Math.abs(parseFloat(s)) <= 10.00);
-  // Page 2: > 10.00
-  const page2Spheres = spheres.filter(s => Math.abs(parseFloat(s)) > 10.00);
+  // Constants for A4 Page Layout (in mm)
+  // A4 is 210mm x 297mm
+  const PAGE_HEIGHT_MM = 297;
+  const MARGIN_MM = 12;
+  const HEADER_HEIGHT_MM = 35; // Height of invoice info header
+  const FOOTER_HEIGHT_MM = 25; // Height of signature area
+  const TABLE_HEADER_HEIGHT_MM = 8;
+  
+  // Calculate available height for the table body per page
+  const AVAILABLE_BODY_HEIGHT_MM = PAGE_HEIGHT_MM - (2 * MARGIN_MM) - HEADER_HEIGHT_MM - FOOTER_HEIGHT_MM - TABLE_HEADER_HEIGHT_MM;
 
-  // Dynamic styling based on data density
-  // If we have few columns, we scale up the table for better legibility ("Make it bigger")
-  const colCount = cylinders.length;
-  const isLowDensity = colCount <= 8;
-  const isMediumDensity = colCount > 8 && colCount <= 14;
+  // Pagination Logic
+  // We determine how many rows can fit comfortably.
+  // We split based on the logical optical break (usually at 10.00), but we ensure we don't overflow.
+  
+  // Helper to get numeric value
+  const getVal = (s: string) => Math.abs(parseFloat(s));
 
-  const styles = {
-    fontSize: isLowDensity ? '12px' : isMediumDensity ? '10px' : '9px',
-    rowHeight: isLowDensity ? '30px' : isMediumDensity ? '24px' : '20px',
+  // Split data into pages. 
+  // Strategy: Try to break at 10.00 if possible, otherwise fill page max capacity.
+  // Assuming a minimum readable row height of 4.5mm.
+  const MAX_ROWS_PER_PAGE = Math.floor(AVAILABLE_BODY_HEIGHT_MM / 4.5);
+  
+  const pages: string[][] = [];
+  let currentPageRows: string[] = [];
+
+  // Identify the split point index for 10.00
+  const splitIndex = spheres.findIndex(s => getVal(s) > 10.00);
+  
+  if (splitIndex !== -1 && splitIndex <= MAX_ROWS_PER_PAGE) {
+     // If the 10.00 split fits on page 1, use that as the natural break
+     pages.push(spheres.slice(0, splitIndex));
+     
+     // Put the rest on subsequent pages
+     const remaining = spheres.slice(splitIndex);
+     if (remaining.length > 0) {
+        // Chunk the remaining if they exceed one page (unlikely for standard ranges, but good for safety)
+        for (let i = 0; i < remaining.length; i += MAX_ROWS_PER_PAGE) {
+           pages.push(remaining.slice(i, i + MAX_ROWS_PER_PAGE));
+        }
+     }
+  } else {
+     // Just chunk linearly if natural split doesn't apply or fits badly
+     for (let i = 0; i < spheres.length; i += MAX_ROWS_PER_PAGE) {
+        pages.push(spheres.slice(i, i + MAX_ROWS_PER_PAGE));
+     }
+  }
+
+  // Helper to calculate styles for a specific page
+  const getPageStyles = (rowCount: number, colCount: number) => {
+    // Distribute available height among rows, but cap max height for aesthetics
+    let calculatedRowHeight = AVAILABLE_BODY_HEIGHT_MM / Math.max(rowCount, 10); // Don't stretch too much if few rows
+    // Clamp row height
+    calculatedRowHeight = Math.min(Math.max(calculatedRowHeight, 4.5), 8); 
+
+    return {
+      fontSize: colCount > 14 ? '8px' : colCount > 10 ? '9px' : '10px',
+      rowHeight: `${calculatedRowHeight}mm`,
+      cellPadding: '0',
+    };
   };
 
   const InvoiceHeader = () => (
-    <div className="mb-4 border-b-2 border-black pb-2" style={{ fontFamily: 'Times New Roman, serif' }}>
-      <div className="text-center">
-        <h1 className="text-3xl font-bold uppercase m-0 leading-tight tracking-wider">Sales Invoice</h1>
-      </div>
-      <div className="mt-6 flex justify-between text-[12px] leading-snug">
-        <div className="w-[60%]">
-          <p className="m-0"><strong>Client Name:</strong> {info.clientName || '__________________________'}</p>
-          <p className="m-0"><strong>Address:</strong> {info.clientAddress || '__________________________'}</p>
+    <div className="mb-2 border-b-2 border-slate-800 pb-2 flex justify-between items-start" style={{ height: `${HEADER_HEIGHT_MM - 4}mm` }}>
+      <div className="w-[60%]">
+        <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 mb-1">Sales Invoice</h1>
+        <div className="text-[10px] text-slate-600 leading-tight space-y-0.5">
+           <p><span className="font-bold text-slate-800">Client:</span> {info.clientName}</p>
+           <p><span className="font-bold text-slate-800">Address:</span> {info.clientAddress}</p>
         </div>
-        <div className="w-[40%] text-right">
-          <p className="m-0"><strong>Order ID:</strong> {info.orderId}</p>
-          <p className="m-0"><strong>Date:</strong> {info.date}</p>
-          <p className="m-0"><strong>Lens Type:</strong> <span className="underline font-bold">{info.lensType || '________________'}</span></p>
+      </div>
+      <div className="w-[40%] text-right text-[10px] leading-tight space-y-0.5">
+        <div className="bg-slate-100 p-2 rounded border border-slate-200 inline-block text-left min-w-[120px]">
+          <p><span className="font-bold text-slate-700">Order ID:</span> {info.orderId}</p>
+          <p><span className="font-bold text-slate-700">Date:</span> {info.date}</p>
+          <p className="mt-1 pt-1 border-t border-slate-300">
+             <span className="font-bold text-slate-700">Lens:</span> {info.lensType}
+          </p>
         </div>
       </div>
     </div>
+  );
+
+  const InvoiceFooter = () => (
+    <div className="absolute bottom-[12mm] left-[12mm] right-[12mm] flex justify-between text-[10px] text-slate-600">
+        <div className="text-center w-40">
+          <div className="h-8 border-b border-slate-400 mb-1"></div>
+          <p className="font-bold uppercase tracking-wider text-[8px]">Authorized Signature</p>
+        </div>
+        <div className="text-center w-40">
+          <div className="h-8 border-b border-slate-400 mb-1"></div>
+          <p className="font-bold uppercase tracking-wider text-[8px]">Customer Acknowledgment</p>
+        </div>
+      </div>
   );
 
   const CellContent = ({ children, bold = false }: { children?: React.ReactNode, bold?: boolean }) => (
@@ -54,83 +114,104 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
         alignItems: 'center', 
         justifyContent: 'center',
         fontWeight: bold ? 'bold' : 'normal',
-        textAlign: 'center'
+        textAlign: 'center',
+        // Force wrap prevention for numbers
+        whiteSpace: 'nowrap',
+        overflow: 'hidden'
       }}
     >
       {children}
     </div>
   );
 
-  const TablePage = ({ pageSpheres }: { pageSpheres: string[] }) => (
-    <div 
-      className="invoice-page bg-white p-[15mm] box-border relative" 
-      style={{ 
-        width: '210mm',
-        height: '297mm',
-        fontFamily: 'Times New Roman, serif',
-        backgroundColor: '#ffffff'
-      }}
-    >
-      <InvoiceHeader />
-      <table 
-        className="w-full border-collapse border border-black" 
-        style={{ 
-          tableLayout: 'fixed',
-          fontSize: styles.fontSize
-        }}
-      >
-        <thead>
-          <tr style={{ height: styles.rowHeight }} className="bg-gray-50">
-            <th 
-              className="border border-black p-0" 
-              style={{ width: '60px' }}
-            >
-              <CellContent bold>SPH \ CYL</CellContent>
-            </th>
-            {cylinders.map(cyl => (
-              <th key={cyl} className="border border-black p-0">
-                <CellContent bold>{cyl}</CellContent>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {pageSpheres.map(sph => (
-            <tr key={sph} style={{ height: styles.rowHeight }}>
-              <td className="border border-black p-0 bg-gray-50">
-                <CellContent bold>{sph}</CellContent>
-              </td>
-              {cylinders.map(cyl => {
-                const key = `${sph}|${cyl}`;
-                const val = gridData[key];
-                return (
-                  <td key={cyl} className="border border-black p-0">
-                    <CellContent>{val || ''}</CellContent>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      
-      <div className="absolute bottom-[20mm] left-[15mm] right-[15mm] flex justify-between text-[11px]">
-        <div className="text-center w-40">
-          <p className="mb-12">Authorized Signature</p>
-          <div className="border-t border-black pt-1 font-bold">Company Stamp</div>
-        </div>
-        <div className="text-center w-40">
-          <p className="mb-12">Customer Acknowledgment</p>
-          <div className="border-t border-black pt-1 font-bold">Date & Signature</div>
-        </div>
-      </div>
+  // Diagonal header cell using CSS gradient
+  const DiagonalHeader = () => (
+    <div style={{ 
+      width: '100%', 
+      height: '100%', 
+      position: 'relative',
+      background: 'linear-gradient(to top right, transparent 49%, #94a3b8 50%, transparent 51%)'
+    }}>
+      <span style={{ position: 'absolute', bottom: '2px', left: '2px', fontSize: '8px', fontWeight: 'bold' }}>SPH</span>
+      <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '8px', fontWeight: 'bold' }}>CYL</span>
     </div>
   );
 
   return (
-    <div className="pdf-wrapper" style={{ backgroundColor: '#ffffff' }}>
-      <TablePage pageSpheres={page1Spheres} />
-      {page2Spheres.length > 0 && <TablePage pageSpheres={page2Spheres} />}
+    <div className="pdf-wrapper">
+      {pages.map((pageRows, pageIndex) => {
+        const styles = getPageStyles(pageRows.length, cylinders.length);
+        
+        return (
+          <div 
+            key={pageIndex}
+            className="invoice-page box-border relative" 
+            style={{ 
+              width: '210mm',
+              height: '297mm',
+              padding: `${MARGIN_MM}mm`,
+              backgroundColor: '#ffffff',
+              fontFamily: 'Inter, sans-serif', // Use cleaner sans-serif font
+              color: '#0f172a' // slate-900
+            }}
+          >
+            <InvoiceHeader />
+            
+            <table 
+              className="w-full border-collapse" 
+              style={{ 
+                tableLayout: 'fixed',
+                fontSize: styles.fontSize,
+                border: '1px solid #334155' // slate-700
+              }}
+            >
+              <thead>
+                <tr style={{ height: `${TABLE_HEADER_HEIGHT_MM}mm` }} className="bg-slate-200 text-slate-800">
+                  <th className="border border-slate-600 p-0 w-[50px]">
+                    <DiagonalHeader />
+                  </th>
+                  {cylinders.map(cyl => (
+                    <th key={cyl} className="border border-slate-600 p-0 font-bold bg-slate-200">
+                      <CellContent bold>{cyl}</CellContent>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((sph, rowIndex) => (
+                  <tr 
+                    key={sph} 
+                    style={{ height: styles.rowHeight }}
+                    // Zebra striping: Odd rows get a very light gray background
+                    className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
+                  >
+                    <td className="border border-slate-600 p-0 font-bold bg-slate-100 text-slate-900">
+                      <CellContent bold>{sph}</CellContent>
+                    </td>
+                    {cylinders.map(cyl => {
+                      const key = `${sph}|${cyl}`;
+                      const val = gridData[key];
+                      return (
+                        <td key={cyl} className="border border-slate-400 p-0 text-slate-800">
+                           {/* Add extra weight if there is a value */}
+                          <CellContent bold={!!val}>{val || ''}</CellContent>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <InvoiceFooter />
+            
+            {/* Page Number */}
+            <div className="absolute bottom-[6mm] right-[12mm] text-[8px] text-slate-400">
+              Page {pageIndex + 1} of {pages.length}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
