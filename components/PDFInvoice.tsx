@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OrderInfo, GridData } from '../types';
 
@@ -21,19 +22,16 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   const AVAILABLE_BODY_HEIGHT_MM = PAGE_HEIGHT_MM - (2 * MARGIN_MM) - HEADER_HEIGHT_MM - FOOTER_HEIGHT_MM - TABLE_HEADER_HEIGHT_MM;
 
   // Pagination Logic
-  // We determine how many rows can fit comfortably.
-  // We split based on the logical optical break (usually at 10.00), but we ensure we don't overflow.
-  
   // Helper to get numeric value
   const getVal = (s: string) => Math.abs(parseFloat(s));
 
-  // Split data into pages. 
-  // Strategy: Try to break at 10.00 if possible, otherwise fill page max capacity.
-  // Assuming a minimum readable row height of 4.5mm.
-  const MAX_ROWS_PER_PAGE = Math.floor(AVAILABLE_BODY_HEIGHT_MM / 4.5);
+  // Minimum row height in mm. Increased to 5mm to prevent text clipping.
+  const MIN_ROW_HEIGHT_MM = 5;
+
+  // Calculate max rows based on the safe minimum height
+  const MAX_ROWS_PER_PAGE = Math.floor(AVAILABLE_BODY_HEIGHT_MM / MIN_ROW_HEIGHT_MM);
   
   const pages: string[][] = [];
-  let currentPageRows: string[] = [];
 
   // Identify the split point index for 10.00
   const splitIndex = spheres.findIndex(s => getVal(s) > 10.00);
@@ -45,7 +43,6 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
      // Put the rest on subsequent pages
      const remaining = spheres.slice(splitIndex);
      if (remaining.length > 0) {
-        // Chunk the remaining if they exceed one page (unlikely for standard ranges, but good for safety)
         for (let i = 0; i < remaining.length; i += MAX_ROWS_PER_PAGE) {
            pages.push(remaining.slice(i, i + MAX_ROWS_PER_PAGE));
         }
@@ -59,15 +56,16 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
 
   // Helper to calculate styles for a specific page
   const getPageStyles = (rowCount: number, colCount: number) => {
-    // Distribute available height among rows, but cap max height for aesthetics
-    let calculatedRowHeight = AVAILABLE_BODY_HEIGHT_MM / Math.max(rowCount, 10); // Don't stretch too much if few rows
-    // Clamp row height
-    calculatedRowHeight = Math.min(Math.max(calculatedRowHeight, 4.5), 8); 
+    // Distribute available height among rows
+    let calculatedRowHeight = AVAILABLE_BODY_HEIGHT_MM / Math.max(rowCount, 10); 
+    
+    // Clamp row height: Min 5mm (safety), Max 8mm (aesthetics)
+    calculatedRowHeight = Math.min(Math.max(calculatedRowHeight, MIN_ROW_HEIGHT_MM), 8); 
 
     return {
-      fontSize: colCount > 14 ? '8px' : colCount > 10 ? '9px' : '10px',
+      // Adjusted font sizes to be slightly smaller to ensure they fit in the 5mm rows
+      fontSize: colCount > 14 ? '7px' : colCount > 10 ? '8px' : '9px',
       rowHeight: `${calculatedRowHeight}mm`,
-      cellPadding: '0',
     };
   };
 
@@ -105,26 +103,7 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
       </div>
   );
 
-  const CellContent = ({ children, bold = false }: { children?: React.ReactNode, bold?: boolean }) => (
-    <div 
-      style={{ 
-        display: 'flex', 
-        width: '100%', 
-        height: '100%', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        fontWeight: bold ? 'bold' : 'normal',
-        textAlign: 'center',
-        // Force wrap prevention for numbers
-        whiteSpace: 'nowrap',
-        overflow: 'hidden'
-      }}
-    >
-      {children}
-    </div>
-  );
-
-  // Diagonal header cell using SVG line instead of CSS gradient to prevent html2canvas errors
+  // Diagonal header cell using SVG
   const DiagonalHeader = () => (
     <div style={{ 
       width: '100%', 
@@ -159,8 +138,8 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
               height: '297mm',
               padding: `${MARGIN_MM}mm`,
               backgroundColor: '#ffffff',
-              fontFamily: 'Inter, sans-serif', // Use cleaner sans-serif font
-              color: '#0f172a' // slate-900
+              fontFamily: 'Inter, sans-serif', 
+              color: '#0f172a' 
             }}
           >
             <InvoiceHeader />
@@ -170,17 +149,21 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
               style={{ 
                 tableLayout: 'fixed',
                 fontSize: styles.fontSize,
-                border: '1px solid #334155' // slate-700
+                border: '1px solid #334155'
               }}
             >
               <thead>
                 <tr style={{ height: `${TABLE_HEADER_HEIGHT_MM}mm` }} className="bg-slate-200 text-slate-800">
-                  <th className="border border-slate-600 p-0 w-[50px]">
+                  <th className="border border-slate-600 p-0 w-[50px] relative">
                     <DiagonalHeader />
                   </th>
                   {cylinders.map(cyl => (
-                    <th key={cyl} className="border border-slate-600 p-0 font-bold bg-slate-200">
-                      <CellContent bold>{cyl}</CellContent>
+                    <th 
+                      key={cyl} 
+                      className="border border-slate-600 p-0 font-bold bg-slate-200"
+                      style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                    >
+                      {cyl}
                     </th>
                   ))}
                 </tr>
@@ -190,19 +173,24 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
                   <tr 
                     key={sph} 
                     style={{ height: styles.rowHeight }}
-                    // Zebra striping: Odd rows get a very light gray background
                     className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
                   >
-                    <td className="border border-slate-600 p-0 font-bold bg-slate-100 text-slate-900">
-                      <CellContent bold>{sph}</CellContent>
+                    <td 
+                      className="border border-slate-600 p-0 font-bold bg-slate-100 text-slate-900"
+                      style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                    >
+                      {sph}
                     </td>
                     {cylinders.map(cyl => {
                       const key = `${sph}|${cyl}`;
                       const val = gridData[key];
                       return (
-                        <td key={cyl} className="border border-slate-400 p-0 text-slate-800">
-                           {/* Add extra weight if there is a value */}
-                          <CellContent bold={!!val}>{val || ''}</CellContent>
+                        <td 
+                          key={cyl} 
+                          className="border border-slate-400 p-0 text-slate-800"
+                          style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                        >
+                          {val ? <strong>{val}</strong> : ''}
                         </td>
                       );
                     })}
