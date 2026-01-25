@@ -124,16 +124,24 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
     </div>
   );
 
-  // Diagonal header cell using CSS gradient
+  // Diagonal header cell using SVG line instead of CSS gradient to prevent html2canvas errors
   const DiagonalHeader = () => (
     <div style={{ 
       width: '100%', 
       height: '100%', 
-      position: 'relative',
-      background: 'linear-gradient(to top right, transparent 49%, #94a3b8 50%, transparent 51%)'
+      position: 'relative'
     }}>
-      <span style={{ position: 'absolute', bottom: '2px', left: '2px', fontSize: '8px', fontWeight: 'bold' }}>SPH</span>
-      <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '8px', fontWeight: 'bold' }}>CYL</span>
+      <svg 
+        width="100%" 
+        height="100%" 
+        viewBox="0 0 100 100" 
+        preserveAspectRatio="none"
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      >
+        <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" />
+      </svg>
+      <span style={{ position: 'absolute', bottom: '1px', left: '2px', fontSize: '7px', fontWeight: 'bold', lineHeight: 1 }}>SPH</span>
+      <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '7px', fontWeight: 'bold', lineHeight: 1 }}>CYL</span>
     </div>
   );
 
