@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderInfo, GridData } from '../types';
 
@@ -14,18 +13,17 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   // A4 is 210mm x 297mm
   const PAGE_HEIGHT_MM = 297;
   const MARGIN_MM = 12;
-  const HEADER_HEIGHT_MM = 35; // Height of invoice info header
-  const FOOTER_HEIGHT_MM = 25; // Height of signature area
+  const HEADER_HEIGHT_MM = 40; 
+  const FOOTER_HEIGHT_MM = 25; 
   const TABLE_HEADER_HEIGHT_MM = 8;
   
   // Calculate available height for the table body per page
   const AVAILABLE_BODY_HEIGHT_MM = PAGE_HEIGHT_MM - (2 * MARGIN_MM) - HEADER_HEIGHT_MM - FOOTER_HEIGHT_MM - TABLE_HEADER_HEIGHT_MM;
 
   // Pagination Logic
-  // Helper to get numeric value
   const getVal = (s: string) => Math.abs(parseFloat(s));
 
-  // Minimum row height in mm. Increased to 5mm to prevent text clipping.
+  // Minimum row height in mm.
   const MIN_ROW_HEIGHT_MM = 5;
 
   // Calculate max rows based on the safe minimum height
@@ -37,10 +35,7 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   const splitIndex = spheres.findIndex(s => getVal(s) > 10.00);
   
   if (splitIndex !== -1 && splitIndex <= MAX_ROWS_PER_PAGE) {
-     // If the 10.00 split fits on page 1, use that as the natural break
      pages.push(spheres.slice(0, splitIndex));
-     
-     // Put the rest on subsequent pages
      const remaining = spheres.slice(splitIndex);
      if (remaining.length > 0) {
         for (let i = 0; i < remaining.length; i += MAX_ROWS_PER_PAGE) {
@@ -48,7 +43,6 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
         }
      }
   } else {
-     // Just chunk linearly if natural split doesn't apply or fits badly
      for (let i = 0; i < spheres.length; i += MAX_ROWS_PER_PAGE) {
         pages.push(spheres.slice(i, i + MAX_ROWS_PER_PAGE));
      }
@@ -56,35 +50,40 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
 
   // Helper to calculate styles for a specific page
   const getPageStyles = (rowCount: number, colCount: number) => {
-    // Distribute available height among rows
     let calculatedRowHeight = AVAILABLE_BODY_HEIGHT_MM / Math.max(rowCount, 10); 
-    
-    // Clamp row height: Min 5mm (safety), Max 8mm (aesthetics)
     calculatedRowHeight = Math.min(Math.max(calculatedRowHeight, MIN_ROW_HEIGHT_MM), 8); 
 
     return {
-      // Adjusted font sizes to be slightly smaller to ensure they fit in the 5mm rows
       fontSize: colCount > 14 ? '7px' : colCount > 10 ? '8px' : '9px',
       rowHeight: `${calculatedRowHeight}mm`,
     };
   };
 
   const InvoiceHeader = () => (
-    <div className="mb-2 border-b-2 border-slate-800 pb-2 flex justify-between items-start" style={{ height: `${HEADER_HEIGHT_MM - 4}mm` }}>
-      <div className="w-[60%]">
-        <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 mb-1">Sales Invoice</h1>
-        <div className="text-[10px] text-slate-600 leading-tight space-y-0.5">
-           <p><span className="font-bold text-slate-800">Client:</span> {info.clientName}</p>
-           <p><span className="font-bold text-slate-800">Address:</span> {info.clientAddress}</p>
-        </div>
+    <div className="mb-2 border-b-2 border-slate-800 pb-1" style={{ height: `${HEADER_HEIGHT_MM - 4}mm` }}>
+      {/* Top Center: Lens Type Value Only (Big & Bold) */}
+      <div className="flex justify-center items-center h-[14mm]">
+          {info.lensType && (
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 leading-none pb-1 text-center">
+              {info.lensType}
+            </h1>
+          )}
       </div>
-      <div className="w-[40%] text-right text-[10px] leading-tight space-y-0.5">
-        <div className="bg-slate-100 p-2 rounded border border-slate-200 inline-block text-left min-w-[120px]">
-          <p><span className="font-bold text-slate-700">Order ID:</span> {info.orderId}</p>
-          <p><span className="font-bold text-slate-700">Date:</span> {info.date}</p>
-          <p className="mt-1 pt-1 border-t border-slate-300">
-             <span className="font-bold text-slate-700">Lens:</span> {info.lensType}
-          </p>
+
+      {/* Bottom Area: Info & Meta */}
+      <div className="flex justify-between items-end h-[16mm] pb-1">
+        <div className="w-[60%]">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Invoice</h2>
+          <div className="text-[9px] text-slate-600 leading-tight">
+             <p><span className="font-bold text-slate-800">Client:</span> {info.clientName}</p>
+             <p><span className="font-bold text-slate-800">Address:</span> {info.clientAddress}</p>
+          </div>
+        </div>
+        <div className="w-[40%] text-right text-[9px] leading-tight">
+           <div className="inline-block bg-slate-50 px-2 py-1 rounded border border-slate-100">
+             <p><span className="font-bold text-slate-700">ID:</span> {info.orderId}</p>
+             <p><span className="font-bold text-slate-700">Date:</span> {info.date}</p>
+           </div>
         </div>
       </div>
     </div>
@@ -124,6 +123,22 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
     </div>
   );
 
+  // Robust centering component
+  const CenterContent = ({ children, bold }: { children: React.ReactNode, bold?: boolean }) => (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: '100%',
+      fontWeight: bold ? 'bold' : 'normal',
+      textAlign: 'center',
+      lineHeight: '1', // Reset line height to avoid offset
+    }}>
+      <span>{children}</span>
+    </div>
+  );
+
   return (
     <div className="pdf-wrapper">
       {pages.map((pageRows, pageIndex) => {
@@ -158,12 +173,8 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
                     <DiagonalHeader />
                   </th>
                   {cylinders.map(cyl => (
-                    <th 
-                      key={cyl} 
-                      className="border border-slate-600 p-0 font-bold bg-slate-200"
-                      style={{ textAlign: 'center', verticalAlign: 'middle' }}
-                    >
-                      {cyl}
+                    <th key={cyl} className="border border-slate-600 p-0 font-bold bg-slate-200">
+                      <CenterContent bold>{cyl}</CenterContent>
                     </th>
                   ))}
                 </tr>
@@ -177,9 +188,9 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
                   >
                     <td 
                       className="border border-slate-600 p-0 font-bold bg-slate-100 text-slate-900"
-                      style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                      style={{ height: styles.rowHeight }}
                     >
-                      {sph}
+                      <CenterContent bold>{sph}</CenterContent>
                     </td>
                     {cylinders.map(cyl => {
                       const key = `${sph}|${cyl}`;
@@ -188,9 +199,11 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
                         <td 
                           key={cyl} 
                           className="border border-slate-400 p-0 text-slate-800"
-                          style={{ textAlign: 'center', verticalAlign: 'middle' }}
+                          style={{ height: styles.rowHeight }}
                         >
-                          {val ? <strong>{val}</strong> : ''}
+                          <CenterContent bold={!!val}>
+                             {val ? val : ''}
+                          </CenterContent>
                         </td>
                       );
                     })}
