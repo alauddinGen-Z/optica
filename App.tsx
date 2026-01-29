@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { OrderInfo, GridData } from './types';
 import { SPHERES, CYLINDERS } from './constants';
@@ -136,8 +137,8 @@ const App: React.FC = () => {
         
         const originalPage = pageElements[i] as HTMLElement;
         
+        // Clone with explicit white background to avoid dark mode issues
         const clonedPage = originalPage.cloneNode(true) as HTMLElement;
-        
         clonedPage.style.position = 'fixed';
         clonedPage.style.top = '0';
         clonedPage.style.left = '0';
@@ -145,24 +146,26 @@ const App: React.FC = () => {
         clonedPage.style.width = '210mm';
         clonedPage.style.height = '297mm';
         clonedPage.style.visibility = 'visible'; 
+        clonedPage.style.backgroundColor = '#ffffff';
         
         document.body.appendChild(clonedPage);
 
-        await new Promise(r => setTimeout(r, 100));
+        // Wait slightly for DOM to settle styles
+        await new Promise(r => setTimeout(r, 150));
 
         const canvas = await html2canvas(clonedPage, {
-          scale: 2, 
+          scale: 3, // Higher scale for crisper text
           useCORS: true,
           logging: false,
           backgroundColor: '#ffffff',
           width: 794, 
-          height: 1123, 
+          height: 1123,
           windowWidth: 1200, 
         });
 
         document.body.removeChild(clonedPage);
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
         
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);

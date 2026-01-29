@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OrderInfo, GridData } from '../types';
 
@@ -10,28 +11,21 @@ interface PDFInvoiceProps {
 
 const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylinders }) => {
   // Constants for A4 Page Layout (in mm)
-  // A4 is 210mm x 297mm
   const PAGE_HEIGHT_MM = 297;
-  const MARGIN_MM = 12;
-  const HEADER_HEIGHT_MM = 40; 
-  const FOOTER_HEIGHT_MM = 25; 
+  const MARGIN_MM = 15;
+  const HEADER_HEIGHT_MM = 45;
+  const FOOTER_HEIGHT_MM = 15;
   const TABLE_HEADER_HEIGHT_MM = 8;
   
   // Calculate available height for the table body per page
   const AVAILABLE_BODY_HEIGHT_MM = PAGE_HEIGHT_MM - (2 * MARGIN_MM) - HEADER_HEIGHT_MM - FOOTER_HEIGHT_MM - TABLE_HEADER_HEIGHT_MM;
 
-  // Pagination Logic
   const getVal = (s: string) => Math.abs(parseFloat(s));
-
-  // Minimum row height in mm.
-  const MIN_ROW_HEIGHT_MM = 5;
-
-  // Calculate max rows based on the safe minimum height
+  const MIN_ROW_HEIGHT_MM = 5.5;
   const MAX_ROWS_PER_PAGE = Math.floor(AVAILABLE_BODY_HEIGHT_MM / MIN_ROW_HEIGHT_MM);
   
   const pages: string[][] = [];
 
-  // Identify the split point index for 10.00
   const splitIndex = spheres.findIndex(s => getVal(s) > 10.00);
   
   if (splitIndex !== -1 && splitIndex <= MAX_ROWS_PER_PAGE) {
@@ -48,10 +42,9 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
      }
   }
 
-  // Helper to calculate styles for a specific page
   const getPageStyles = (rowCount: number, colCount: number) => {
     let calculatedRowHeight = AVAILABLE_BODY_HEIGHT_MM / Math.max(rowCount, 10); 
-    calculatedRowHeight = Math.min(Math.max(calculatedRowHeight, MIN_ROW_HEIGHT_MM), 8); 
+    calculatedRowHeight = Math.min(Math.max(calculatedRowHeight, MIN_ROW_HEIGHT_MM), 9); 
 
     return {
       fontSize: colCount > 14 ? '7px' : colCount > 10 ? '8px' : '9px',
@@ -59,83 +52,62 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
     };
   };
 
+  // Aesthetic Theme Colors
+  const THEME = {
+    primary: '#1e3a8a',    // Deep Royal Blue (blue-900)
+    secondary: '#2563eb',  // Bright Blue (blue-600)
+    accent: '#eff6ff',     // Light Blue Background (blue-50)
+    border: '#cbd5e1',     // Slate Border (slate-300)
+    textMain: '#0f172a',   // Dark Slate (slate-900)
+    textMuted: '#64748b',  // Muted Slate (slate-500)
+    sphBg: '#f8fafc',      // Very light slate for SPH column
+    white: '#ffffff',
+  };
+
   const InvoiceHeader = () => (
-    <div className="mb-2 border-b-2 border-slate-800 pb-1" style={{ height: `${HEADER_HEIGHT_MM - 4}mm` }}>
-      {/* Top Center: Lens Type Value Only (Big & Bold) */}
-      <div className="flex justify-center items-center h-[14mm]">
-          {info.lensType && (
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 leading-none pb-1 text-center">
-              {info.lensType}
+    <div className="flex flex-row justify-between items-start mb-4 pb-4 border-b-[2px] h-[40mm]" style={{ borderColor: THEME.primary }}>
+      {/* Left Side: Client Info & Title */}
+      <div className="w-[55%] flex flex-col justify-between h-full">
+         <div>
+            <h1 className="text-2xl font-black uppercase tracking-tight leading-none mb-1" style={{ color: THEME.primary }}>
+              Sales Invoice
             </h1>
-          )}
+            <p className="text-[10px] font-medium" style={{ color: THEME.textMuted }}>Precision Optical Order</p>
+         </div>
+         
+         <div className="text-[10px] leading-snug mt-2">
+            <div className="mb-1">
+              <span className="font-bold uppercase mr-2" style={{ color: THEME.secondary }}>Bill To:</span>
+            </div>
+            <p className="font-bold text-lg leading-none mb-1" style={{ color: THEME.textMain }}>{info.clientName || '________________'}</p>
+            <p className="w-3/4" style={{ color: THEME.textMuted }}>{info.clientAddress || '________________'}</p>
+         </div>
       </div>
 
-      {/* Bottom Area: Info & Meta */}
-      <div className="flex justify-between items-end h-[16mm] pb-1">
-        <div className="w-[60%]">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Invoice</h2>
-          <div className="text-[9px] text-slate-600 leading-tight">
-             <p><span className="font-bold text-slate-800">Client:</span> {info.clientName}</p>
-             <p><span className="font-bold text-slate-800">Address:</span> {info.clientAddress}</p>
-          </div>
-        </div>
-        <div className="w-[40%] text-right text-[9px] leading-tight">
-           <div className="inline-block bg-slate-50 px-2 py-1 rounded border border-slate-100">
-             <p><span className="font-bold text-slate-700">ID:</span> {info.orderId}</p>
-             <p><span className="font-bold text-slate-700">Date:</span> {info.date}</p>
-           </div>
-        </div>
+      {/* Right Side: Order Info & Lens Type */}
+      <div className="w-[45%] flex flex-col items-end justify-between h-full text-right">
+         <div className="px-4 py-1.5 min-w-[140px] rounded-bl-lg shadow-sm" style={{ backgroundColor: THEME.primary, color: THEME.white }}>
+            <h2 className="text-xs font-bold uppercase text-center tracking-widest">Order Details</h2>
+         </div>
+
+         <div className="flex flex-col gap-1 text-[10px] w-full items-end mt-2">
+            <div className="flex justify-between w-[160px] border-b pb-0.5" style={{ borderColor: THEME.border }}>
+               <span className="font-bold" style={{ color: THEME.textMuted }}>Invoice ID:</span>
+               <span className="font-bold font-mono" style={{ color: THEME.textMain }}>{info.orderId}</span>
+            </div>
+            <div className="flex justify-between w-[160px] border-b pb-0.5" style={{ borderColor: THEME.border }}>
+               <span className="font-bold" style={{ color: THEME.textMuted }}>Date:</span>
+               <span className="font-bold" style={{ color: THEME.textMain }}>{info.date}</span>
+            </div>
+         </div>
+
+         <div className="mt-auto pt-2">
+           <span className="block text-[8px] font-bold uppercase tracking-widest mb-0.5" style={{ color: THEME.textMuted }}>Product / Lens Type</span>
+           <span className="block text-xl font-black leading-none uppercase" style={{ color: THEME.secondary }}>
+             {info.lensType || 'Standard Lens'}
+           </span>
+         </div>
       </div>
-    </div>
-  );
-
-  const InvoiceFooter = () => (
-    <div className="absolute bottom-[12mm] left-[12mm] right-[12mm] flex justify-between text-[10px] text-slate-600">
-        <div className="text-center w-40">
-          <div className="h-8 border-b border-slate-400 mb-1"></div>
-          <p className="font-bold uppercase tracking-wider text-[8px]">Authorized Signature</p>
-        </div>
-        <div className="text-center w-40">
-          <div className="h-8 border-b border-slate-400 mb-1"></div>
-          <p className="font-bold uppercase tracking-wider text-[8px]">Customer Acknowledgment</p>
-        </div>
-      </div>
-  );
-
-  // Diagonal header cell using SVG
-  const DiagonalHeader = () => (
-    <div style={{ 
-      width: '100%', 
-      height: '100%', 
-      position: 'relative'
-    }}>
-      <svg 
-        width="100%" 
-        height="100%" 
-        viewBox="0 0 100 100" 
-        preserveAspectRatio="none"
-        style={{ position: 'absolute', top: 0, left: 0 }}
-      >
-        <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" />
-      </svg>
-      <span style={{ position: 'absolute', bottom: '1px', left: '2px', fontSize: '7px', fontWeight: 'bold', lineHeight: 1 }}>SPH</span>
-      <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '7px', fontWeight: 'bold', lineHeight: 1 }}>CYL</span>
-    </div>
-  );
-
-  // Robust centering component
-  const CenterContent = ({ children, bold }: { children: React.ReactNode, bold?: boolean }) => (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: '100%',
-      fontWeight: bold ? 'bold' : 'normal',
-      textAlign: 'center',
-      lineHeight: '1', // Reset line height to avoid offset
-    }}>
-      <span>{children}</span>
     </div>
   );
 
@@ -154,69 +126,97 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
               padding: `${MARGIN_MM}mm`,
               backgroundColor: '#ffffff',
               fontFamily: 'Inter, sans-serif', 
-              color: '#0f172a' 
             }}
           >
             <InvoiceHeader />
             
-            <table 
-              className="w-full border-collapse" 
-              style={{ 
-                tableLayout: 'fixed',
-                fontSize: styles.fontSize,
-                border: '1px solid #334155'
-              }}
-            >
-              <thead>
-                <tr style={{ height: `${TABLE_HEADER_HEIGHT_MM}mm` }} className="bg-slate-200 text-slate-800">
-                  <th className="border border-slate-600 p-0 w-[50px] relative">
-                    <DiagonalHeader />
-                  </th>
-                  {cylinders.map(cyl => (
-                    <th key={cyl} className="border border-slate-600 p-0 font-bold bg-slate-200">
-                      <CenterContent bold>{cyl}</CenterContent>
+            {/* Table Container */}
+            <div className="w-full">
+              <table 
+                className="w-full border-collapse" 
+                style={{ 
+                  tableLayout: 'fixed',
+                  fontSize: styles.fontSize,
+                  border: `2px solid ${THEME.primary}`
+                }}
+              >
+                <thead>
+                  <tr style={{ height: `${TABLE_HEADER_HEIGHT_MM}mm`, backgroundColor: THEME.primary, color: THEME.white }} className="print-color-adjust-exact">
+                    {/* Header: SPH/CYL Split with SVG for sharp diagonal */}
+                    <th className="p-0 w-[50px] relative overflow-hidden" style={{ borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+                         <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+                      </svg>
+                      <span className="absolute top-[2px] right-[2px] text-[7px] font-bold z-10">CYL</span>
+                      <span className="absolute bottom-[2px] left-[2px] text-[7px] font-bold z-10">SPH</span>
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((sph, rowIndex) => (
-                  <tr 
-                    key={sph} 
-                    style={{ height: styles.rowHeight }}
-                    className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
-                  >
-                    <td 
-                      className="border border-slate-600 p-0 font-bold bg-slate-100 text-slate-900"
+                    
+                    {cylinders.map(cyl => (
+                      <th key={cyl} className="p-0 font-bold text-center" style={{ borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                        {cyl}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageRows.map((sph, rowIndex) => (
+                    <tr 
+                      key={sph} 
                       style={{ height: styles.rowHeight }}
                     >
-                      <CenterContent bold>{sph}</CenterContent>
-                    </td>
-                    {cylinders.map(cyl => {
-                      const key = `${sph}|${cyl}`;
-                      const val = gridData[key];
-                      return (
-                        <td 
-                          key={cyl} 
-                          className="border border-slate-400 p-0 text-slate-800"
-                          style={{ height: styles.rowHeight }}
-                        >
-                          <CenterContent bold={!!val}>
-                             {val ? val : ''}
-                          </CenterContent>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <InvoiceFooter />
-            
-            {/* Page Number */}
-            <div className="absolute bottom-[6mm] right-[12mm] text-[8px] text-slate-400">
-              Page {pageIndex + 1} of {pages.length}
+                      {/* SPH Row Header */}
+                      <td 
+                        className="p-0 font-bold text-center"
+                        style={{ 
+                          height: styles.rowHeight,
+                          backgroundColor: THEME.sphBg,
+                          color: THEME.primary,
+                          borderRight: `2px solid ${THEME.primary}`, // Distinct separator for SPH column
+                          borderBottom: `1px solid ${THEME.border}`
+                        }}
+                      >
+                        {sph}
+                      </td>
+                      
+                      {/* Data Cells */}
+                      {cylinders.map((cyl, colIndex) => {
+                        const key = `${sph}|${cyl}`;
+                        const val = gridData[key];
+                        // Striped rows for readability
+                        const cellBg = rowIndex % 2 !== 0 ? THEME.accent : THEME.white;
+                        
+                        return (
+                          <td 
+                            key={cyl} 
+                            className="p-0 text-center"
+                            style={{ 
+                              height: styles.rowHeight,
+                              backgroundColor: cellBg,
+                              borderRight: `1px solid ${THEME.border}`,
+                              borderBottom: `1px solid ${THEME.border}`,
+                              color: THEME.textMain
+                            }}
+                          >
+                            <div className={`w-full h-full flex items-center justify-center ${val ? 'font-black' : ''}`} style={{ color: val ? THEME.primary : 'inherit' }}>
+                               {val ? val : ''}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="absolute bottom-[15mm] left-[15mm] right-[15mm] flex justify-between items-end border-t pt-2" style={{ borderColor: THEME.border }}>
+               <div className="text-[9px]" style={{ color: THEME.textMuted }}>
+                  <p>Generated by LensOrder Pro</p>
+               </div>
+               <div className="text-[9px] font-bold px-3 py-1 rounded" style={{ backgroundColor: THEME.accent, color: THEME.primary }}>
+                 Page {pageIndex + 1} of {pages.length}
+               </div>
             </div>
           </div>
         );
