@@ -71,28 +71,12 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
   };
 
   const InvoiceHeader = () => {
-    let range1 = 0; // 0.00 to 2.00
-    let range2 = 0; // 2.25 to 4.00
-    let range3 = 0; // 4.25 to 6.00
-
-    Object.entries(gridData).forEach(([key, qty]) => {
-      const parts = key.split('|');
-      if (parts.length === 2) {
-        const cylStr = parts[1];
-        const cyl = Math.abs(parseFloat(cylStr));
-
-        if (cyl >= 0 && cyl <= 2.00) range1 += qty;
-        else if (cyl > 2.00 && cyl <= 4.00) range2 += qty;
-        else if (cyl > 4.00 && cyl <= 6.00) range3 += qty;
-      }
-    });
-
-    const totalQty = range1 + range2 + range3;
+    const totalQty = Object.values(gridData).reduce((a, b) => a + b, 0);
 
     return (
       <div className="flex flex-row justify-between items-stretch mb-4 pb-4 border-b-[2px] min-h-[45mm]" style={{ borderColor: THEME.primary }}>
         {/* Left Side: Client Info & Title */}
-        <div className="w-[35%] flex flex-col justify-start">
+        <div className="w-[50%] flex flex-col justify-start">
           <div className="mb-4">
             <h1 className="text-2xl font-black uppercase tracking-tight leading-tight mb-0.5" style={{ color: THEME.primary }}>
               Sales Invoice
@@ -107,19 +91,15 @@ const PDFInvoice: React.FC<PDFInvoiceProps> = ({ info, gridData, spheres, cylind
             <p className="font-bold text-sm leading-tight mb-1" style={{ color: THEME.textMain, wordWrap: 'break-word' }}>{info.clientName || '________________'}</p>
             <p className="w-full" style={{ color: THEME.textMuted, wordWrap: 'break-word' }}>{info.clientAddress || '________________________________'}</p>
           </div>
-        </div>
 
-        {/* Center Side: Quantities Statistics */}
-        <div className="w-[30%] flex flex-col justify-center text-[8px] px-4 border-l" style={{ borderColor: THEME.border }}>
-          <h3 className="font-bold mb-2 uppercase text-[9px] tracking-wider" style={{ color: THEME.primary }}>Quantities (CYL)</h3>
-          <div className="flex justify-between items-center mb-1"><span style={{ color: THEME.textMuted }}>0.00 to ±2.00:</span> <span className="font-bold">{range1}</span></div>
-          <div className="flex justify-between items-center mb-1"><span style={{ color: THEME.textMuted }}>±2.25 to ±4.00:</span> <span className="font-bold">{range2}</span></div>
-          <div className="flex justify-between items-center mb-1"><span style={{ color: THEME.textMuted }}>±4.25 to ±6.00:</span> <span className="font-bold">{range3}</span></div>
-          <div className="flex justify-between items-center mt-2 pt-1 border-t" style={{ borderColor: THEME.border }}><span className="font-bold" style={{ color: THEME.secondary }}>Total:</span> <span className="font-bold text-[10px]">{totalQty}</span></div>
+          <div className="mt-3 inline-flex items-center gap-2 text-[10px]">
+            <span className="font-bold" style={{ color: THEME.textMuted }}>Total Qty:</span>
+            <span className="font-black text-sm" style={{ color: THEME.primary }}>{totalQty}</span>
+          </div>
         </div>
 
         {/* Right Side: Order Info & Lens Type */}
-        <div className="w-[35%] flex flex-col items-end text-right pl-2">
+        <div className="w-[45%] flex flex-col items-end text-right pl-2">
           <div className="px-4 py-1.5 w-full max-w-[160px] rounded-bl-lg rounded-tr-sm shadow-sm mb-4" style={{ backgroundColor: THEME.primary, color: THEME.white }}>
             <h2 className="text-[10px] font-bold uppercase text-center tracking-widest leading-none">Order Details</h2>
           </div>
