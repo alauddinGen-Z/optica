@@ -9,9 +9,11 @@ interface OrderFormProps {
   savedLensTypes: string[];
   onDeleteLensType?: (type: string) => void;
   onEditLensType?: (oldType: string, newType: string) => void;
+  onAddLensType?: (type: string) => void;
+  onAddClientName?: (name: string) => void;
 }
 
-const OrderForm: React.FC<OrderFormProps> = ({ info, onChange, savedClientNames, savedLensTypes, onDeleteLensType, onEditLensType }) => {
+const OrderForm: React.FC<OrderFormProps> = ({ info, onChange, savedClientNames, savedLensTypes, onDeleteLensType, onEditLensType, onAddLensType, onAddClientName }) => {
   const [editingType, setEditingType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -67,13 +69,30 @@ const OrderForm: React.FC<OrderFormProps> = ({ info, onChange, savedClientNames,
       {/* Lens Type with Saved Chips */}
       <div>
         <label className="block text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Lens Type / Product Name</label>
-        <input
-          type="text"
-          placeholder='Type a new lens type and it will be saved'
-          value={info.lensType}
-          onChange={(e) => onChange('lensType', e.target.value)}
-          className="w-full border border-slate-300 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            placeholder='Type a new lens type...'
+            value={info.lensType}
+            onChange={(e) => onChange('lensType', e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onAddLensType?.(info.lensType);
+              }
+            }}
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow"
+          />
+          {info.lensType.trim() && !savedLensTypes.includes(info.lensType.trim()) && (
+            <button
+              onClick={() => onAddLensType?.(info.lensType)}
+              className="absolute right-2 top-2 bottom-2 bg-blue-100 text-blue-700 px-4 rounded-lg font-bold text-sm hover:bg-blue-200 transition-colors active:scale-95 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+              Save
+            </button>
+          )}
+        </div>
 
         {/* Saved Lens Type Chips */}
         {savedLensTypes && savedLensTypes.length > 0 && (
@@ -143,6 +162,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ info, onChange, savedClientNames,
             list="client-name-options"
             value={info.clientName}
             onChange={(e) => onChange('clientName', e.target.value)}
+            onBlur={(e) => onAddClientName?.(e.target.value)}
             className="w-full border border-slate-300 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow"
           />
           {savedClientNames && savedClientNames.length > 0 && (

@@ -99,32 +99,34 @@ const App: React.FC = () => {
 
   }, [orderInfo, gridData, signs, currentHistoryId]);
 
-  // Saved Values Auto-Save Update Effect (for Client Names and Lens Types)
-  useEffect(() => {
-    if (orderInfo.clientName && orderInfo.clientName.trim()) {
-      setSavedClientNames(prev => {
-        const name = orderInfo.clientName.trim();
-        if (!prev.includes(name)) {
-          const newNames = [...prev, name];
-          localStorage.setItem('saved_client_names', JSON.stringify(newNames));
-          return newNames;
-        }
-        return prev;
-      });
-    }
+  // Saved Values Auto-Save Update Effect (for Client Names and Lens Types) - DELETED
+  // Replaced with explicit handler calls to prevent saving partial keystrokes
 
-    if (orderInfo.lensType && orderInfo.lensType.trim()) {
-      setSavedLensTypes(prev => {
-        const type = orderInfo.lensType.trim();
-        if (!prev.includes(type)) {
-          const newTypes = [...prev, type];
-          localStorage.setItem('saved_lens_types', JSON.stringify(newTypes));
-          return newTypes;
-        }
-        return prev;
-      });
-    }
-  }, [orderInfo.clientName, orderInfo.lensType]);
+  const handleAddLensType = (type: string) => {
+    if (!type.trim()) return;
+    setSavedLensTypes(prev => {
+      const trimmed = type.trim();
+      if (!prev.includes(trimmed)) {
+        const newTypes = [...prev, trimmed];
+        localStorage.setItem('saved_lens_types', JSON.stringify(newTypes));
+        return newTypes;
+      }
+      return prev;
+    });
+  };
+
+  const handleAddClientName = (name: string) => {
+    if (!name.trim()) return;
+    setSavedClientNames(prev => {
+      const trimmed = name.trim();
+      if (!prev.includes(trimmed)) {
+        const newNames = [...prev, trimmed];
+        localStorage.setItem('saved_client_names', JSON.stringify(newNames));
+        return newNames;
+      }
+      return prev;
+    });
+  };
 
   const handleDeleteLensType = (type: string) => {
     setSavedLensTypes(prev => {
@@ -435,7 +437,7 @@ const App: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-slate-200/60">
           <div className="col-span-1 md:col-span-8">
             <h2 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 md:mb-4 border-b pb-1 md:pb-2">Client Details</h2>
-            <OrderForm info={orderInfo} onChange={updateOrderInfo} savedClientNames={savedClientNames} savedLensTypes={savedLensTypes} onDeleteLensType={handleDeleteLensType} onEditLensType={handleEditLensType} />
+            <OrderForm info={orderInfo} onChange={updateOrderInfo} savedClientNames={savedClientNames} savedLensTypes={savedLensTypes} onDeleteLensType={handleDeleteLensType} onEditLensType={handleEditLensType} onAddLensType={handleAddLensType} onAddClientName={handleAddClientName} />
           </div>
           <div className="col-span-1 md:col-span-4 bg-slate-50/50 p-3 md:p-4 rounded-xl border border-slate-100 flex flex-col justify-center mt-2 md:mt-0">
             <h2 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 md:mb-4 border-b pb-1 md:pb-2">Sign Configuration</h2>
