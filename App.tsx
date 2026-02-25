@@ -126,6 +126,22 @@ const App: React.FC = () => {
     }
   }, [orderInfo.clientName, orderInfo.lensType]);
 
+  const handleDeleteLensType = (type: string) => {
+    setSavedLensTypes(prev => {
+      const newTypes = prev.filter(t => t !== type);
+      localStorage.setItem('saved_lens_types', JSON.stringify(newTypes));
+      return newTypes;
+    });
+  };
+
+  const handleEditLensType = (oldType: string, newType: string) => {
+    setSavedLensTypes(prev => {
+      const newTypes = prev.map(t => t === oldType ? newType : t);
+      localStorage.setItem('saved_lens_types', JSON.stringify(newTypes));
+      return newTypes;
+    });
+  };
+
   // Transform constants based on selected sign
   const currentSpheres = useMemo(() => {
     return SPHERES.map(s => {
@@ -419,7 +435,7 @@ const App: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-slate-200/60">
           <div className="col-span-1 md:col-span-8">
             <h2 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 md:mb-4 border-b pb-1 md:pb-2">Client Details</h2>
-            <OrderForm info={orderInfo} onChange={updateOrderInfo} savedClientNames={savedClientNames} savedLensTypes={savedLensTypes} />
+            <OrderForm info={orderInfo} onChange={updateOrderInfo} savedClientNames={savedClientNames} savedLensTypes={savedLensTypes} onDeleteLensType={handleDeleteLensType} onEditLensType={handleEditLensType} />
           </div>
           <div className="col-span-1 md:col-span-4 bg-slate-50/50 p-3 md:p-4 rounded-xl border border-slate-100 flex flex-col justify-center mt-2 md:mt-0">
             <h2 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 md:mb-4 border-b pb-1 md:pb-2">Sign Configuration</h2>
